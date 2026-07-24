@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.zip
+.DS_Store
+Thumbs.db
+.vscode/
+.claude/
+*.log
+
+# Private dev artifacts (not part of the extension)
+Pinterest CSS Schema.txt
+CONTEXT.md
+PLAN.md

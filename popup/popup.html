@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PinDark</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup__header">
+        <span class="popup__brand">PinDark</span>
+        <span id="status" class="popup__status popup__status--off" aria-live="polite">Off</span>
+      </header>
+
+      <section class="popup__section">
+        <label class="toggle">
+          <span class="toggle__label">Enable dark mode</span>
+          <input id="toggle-enabled" type="checkbox" class="toggle__input" role="switch" aria-label="Enable dark mode" />
+          <span class="toggle__track" aria-hidden="true"><span class="toggle__thumb"></span></span>
+        </label>
+      </section>
+
+      <section class="popup__section">
+        <div class="schedule">
+          <label class="toggle toggle--inline">
+            <span class="toggle__label">Schedule (auto-on at night)</span>
+            <input id="toggle-schedule" type="checkbox" class="toggle__input" role="switch" aria-label="Enable schedule" />
+            <span class="toggle__track" aria-hidden="true"><span class="toggle__thumb"></span></span>
+          </label>
+
+          <div id="schedule-window" class="schedule__window" hidden>
+            <div class="schedule__field">
+              <label for="start-hour" class="schedule__label">From</label>
+              <input id="start-hour" type="number" min="0" max="23" class="schedule__input" />
+              <span class="schedule__sep">:</span>
+              <input id="start-min" type="number" min="0" max="59" class="schedule__input schedule__input--narrow" />
+            </div>
+            <div class="schedule__field">
+              <label for="end-hour" class="schedule__label">Until</label>
+              <input id="end-hour" type="number" min="0" max="23" class="schedule__input" />
+              <span class="schedule__sep">:</span>
+              <input id="end-min" type="number" min="0" max="59" class="schedule__input schedule__input--narrow" />
+            </div>
+            <p class="schedule__hint">Times wrap past midnight. 19:00 → 07:00 means the dark theme is active from 7pm to 7am.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="popup__section popup__section--center">
+        <a id="donate" class="donate" href="https://topmate.io/mrfanta_stick/2208264/pay" target="_blank" rel="noopener noreferrer">
+          <span class="donate__icon" aria-hidden="true">☕</span>
+          <span>Support PinDark</span>
+        </a>
+      </section>
+
+      <footer class="popup__footer">
+        <span>PinDark v1.0.0</span>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

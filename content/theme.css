@@ -1,0 +1,561 @@
+/*
+ * PinDark — theme.css
+ *
+ * Strategy: override Pinterest's CSS custom properties at :root with
+ * !important. This is the most resilient layer because Pinterest rarely
+ * renames its design tokens. Structural selectors ([data-test-id],
+ * [role], [aria-label]) handle elements that don't read tokens.
+ *
+ * NOTE: this stylesheet is INJECTED at document_start via manifest.json.
+ * It runs before Pinterest's React tree paints, which prevents FOUC.
+ *
+ * IMPORTANT: do NOT use `filter: invert()` on the page. It breaks images,
+ * videos, gradients, and animations. Token overrides only.
+ *
+ * HARD RULES:
+ *   - NEVER set `background-color` on a generic [data-test-id] selector
+ *     without scoping it. Pinterest's image wrappers carry data-test-id
+ *     attributes, and a broad background-color rule either paints over
+ *     the image or — more commonly — disrupts Pinterest's lazy-load
+ *     IntersectionObserver, leaving the <img> with no src.
+ *   - NEVER use the `background` shorthand on Pinterest's image
+ *     containers. The shorthand resets background-image to none.
+ *   - Keep structural overrides surgical. If a token exists, override
+ *     the token. If no token exists, leave it alone.
+*/
+
+/*
+ * 1. Dark palette — the only place colors are defined. Change these
+ *    values to retheme the entire extension.
+*/
+:root {
+  --pindark-bg:           #121212;
+  --pindark-bg-elevated:  #262626;
+  --pindark-bg-hover:     #2e2e2e;
+  --pindark-border:       #2e2e2e;
+  --pindark-text:         #e8e8e8;
+  --pindark-text-muted:   #a0a0a0;
+  --pindark-text-dim:     #707070;
+  --pindark-accent:       #e60023; /* Pinterest red — used sparingly */
+  --pindark-link:         #6cb6ff;
+  --pindark-shadow:       rgba(0, 0, 0, 0.5);
+  --pindark-overlay:      rgba(0, 0, 0, 0.7);
+}
+
+/*
+ * 2. Override Pinterest's design tokens.
+ *
+ * Pinterest ships tokens like:
+ *   --color-background-default, --color-text-default,
+ *   --sema-color-background-default, --sema-color-text-default, etc.
+ * We override the high-traffic ones and rely on the structural fallbacks
+ * below for the rest.
+*/
+html.pindark-on {
+  /* Background tokens */
+  --color-background-default:        var(--pindark-bg)           !important;
+  --color-background-subtle:         var(--pindark-bg-elevated)  !important;
+  --color-background-hover:          var(--pindark-bg-hover)     !important;
+  --color-background-active:         var(--pindark-bg-hover)     !important;
+  --color-background-transparent:    transparent                 !important;
+
+  /* Text tokens */
+  --color-text-default:              var(--pindark-text)         !important;
+  --color-text-subtle:               var(--pindark-text-muted)   !important;
+  --color-text-muted:                var(--pindark-text-muted)   !important;
+  --color-text-hover:                var(--pindark-text)         !important;
+  --color-text-inverse:              var(--pindark-bg)           !important;
+
+  /* Border tokens */
+  --color-border-default:            var(--pindark-border)       !important;
+  --color-border-subtle:             var(--pindark-border)       !important;
+  --color-border-strong:             var(--pindark-text-dim)     !important;
+
+  /* Pinterest's own sema- prefixed token namespace. These are the
+   * tokens Pinterest actually uses in the current build, confirmed
+   * by inspecting the rendered DOM. Will add new ones here as Pinterest
+   * introduces them. */
+  --sema-color-background-default:  var(--pindark-bg)           !important;
+  --sema-color-background-elevation: var(--pindark-bg)          !important;
+  --sema-color-background-subtle:   var(--pindark-bg-elevated)  !important;
+  --sema-color-background-secondary:var(--pindark-bg-elevated)  !important; /* search bar wrapper */
+  --sema-color-text-default:        var(--pindark-text)         !important;
+  --sema-color-text-neutral:        var(--pindark-text)         !important;
+  --sema-color-text-dark:        var(--pindark-link)         !important;
+  --sema-color-text-subtle:         var(--pindark-text-muted)   !important;
+  --sema-color-border-default:      var(--pindark-border)       !important;
+  --sema-color-border-decorative:   var(--pindark-border)       !important; /* sidebar right edge */
+  --sema-color-icon-default:        var(--pindark-text)         !important;
+  --sema-color-icon-subtle:         var(--pindark-text-muted)   !important;
+  --sema-color-link-default:        var(--pindark-link)         !important;
+
+  /* Hover-state tokens. Pinterest defines dedicated tokens for the
+   * hover ring on icon buttons (left-rail nav, search bar, mic,
+   * profile avatar, etc.) and uses them via class-based rules with
+   * HIGHER specificity than any [data-test-id] selector. Overriding
+   * the token beats the cascade. Confirmed by inspecting the
+   * hovered Home button: .XjRT60.bCyBlM { background-color: var(
+   * --sema-color-hover-background-default); } */
+  --sema-color-hover-background-default: var(--pindark-bg-hover) !important;
+  --sema-color-hover-background-subtle:  var(--pindark-bg-hover) !important;
+  --sema-color-hover-background-strong:  var(--pindark-bg-hover) !important;
+  --sema-color-hover-background-secondary: var(--pindark-bg-hover) !important;
+  --sema-color-hover-background-elevation: var(--pindark-bg-hover) !important;
+
+  /* Pressed-state tokens. Pinterest uses --sema-color-pressed-background-*
+   * for the pressed/active background on many UI elements including the
+   * "My saves" button, three-dots (more-actions) button, share button,
+   * and "Group" button on the profile page. The default value is #efefeb
+   * (white/light gray), which flashes white in dark mode. We remap the
+   * high-traffic pressed tokens to our dark palette.
+  */
+  --sema-color-pressed-background-default:               var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-subtle:                var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-strong:                var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-secondary:             var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-tertiary:              var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-light:                 var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-elevation:             var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-neutral-default:       var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-neutral-weak:          var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-elevated-opaque-default:  var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-elevated-opaque-secondary: var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-elevated-opaque-subtle:    var(--pindark-bg-hover) !important;
+  --sema-color-pressed-background-elevated-opaque-tertiary:  var(--pindark-bg-hover) !important;
+
+  /* Button tokens (--comp-button-*) — NON-RED VARIANTS ONLY.
+   * Pinterest's button system has variants: primary, secondary,
+   * tertiary, tertiary-semi-transparent, transparent, transparent-inverse,
+   * shopping, dark, light. We deliberately SKIP primary and shopping —
+   * those are Pinterest's brand red, and the user wants them to stay red.
+   * Every other variant is remapped to the dark palette so Create board,
+   * Share profile, Group, like, share post, comment, and other
+   * non-red buttons stop flashing white on hover/press.
+   *
+   * Mappings:
+   *   -default   → bg-elevated  (#262626)
+   *   -selected  → bg           (#121212)
+   *   -disabled  → text-dim     (#707070)
+   *   hover-     → bg-hover     (#2e2e2e)
+   *   pressed-   → bg           (#121212)
+   *   text/icon  → text         (#e8e8e8)
+   *
+   * The dark and light variants are also remapped: dark already maps
+   * cleanly to our palette (it's "dark on light" in light mode, so we
+   * flip to "light on dark" in dark mode); light is the inverse and
+   * needs the same flipping. */
+  --comp-button-color-background-secondary-default:        var(--pindark-bg-elevated) !important;
+  --comp-button-color-background-secondary-selected:       var(--pindark-bg) !important;
+  --comp-button-color-background-secondary-disabled:       var(--pindark-text-dim) !important;
+  --comp-button-color-hover-background-secondary-default:  var(--pindark-bg-hover) !important;
+  --comp-button-color-hover-background-secondary-selected: var(--pindark-bg-hover) !important;
+  --comp-button-color-pressed-background-secondary-default: var(--pindark-bg) !important;
+  --comp-button-color-pressed-background-secondary-selected: var(--pindark-bg) !important;
+  --comp-button-color-text-secondary-default:              var(--pindark-text) !important;
+  --comp-button-color-text-secondary-selected:             var(--pindark-text) !important;
+  --comp-button-color-text-secondary-disabled:             var(--pindark-text-dim) !important;
+  --comp-button-color-icon-secondary-default:              var(--pindark-text) !important;
+  --comp-button-color-icon-secondary-selected:             var(--pindark-text) !important;
+  --comp-button-color-icon-secondary-disabled:             var(--pindark-text-dim) !important;
+
+  --comp-button-color-background-tertiary-default:         var(--pindark-bg-elevated) !important;
+  --comp-button-color-background-tertiary-selected:        var(--pindark-bg) !important;
+  --comp-button-color-background-tertiary-disabled:        var(--pindark-text-dim) !important;
+  --comp-button-color-hover-background-tertiary-default:   var(--pindark-bg-hover) !important;
+  --comp-button-color-hover-background-tertiary-selected:  var(--pindark-bg-hover) !important;
+  --comp-button-color-pressed-background-tertiary-default: var(--pindark-bg) !important;
+  --comp-button-color-pressed-background-tertiary-selected: var(--pindark-bg) !important;
+  --comp-button-color-text-tertiary-default:               var(--pindark-text) !important;
+  --comp-button-color-text-tertiary-selected:              var(--pindark-text) !important;
+  --comp-button-color-text-tertiary-disabled:              var(--pindark-text-dim) !important;
+  --comp-button-color-icon-tertiary-default:               var(--pindark-text) !important;
+  --comp-button-color-icon-tertiary-selected:              var(--pindark-text) !important;
+  --comp-button-color-icon-tertiary-disabled:              var(--pindark-text-dim) !important;
+
+  --comp-button-color-background-tertiary-semi-transparent-default:  var(--pindark-bg-elevated) !important;
+  --comp-button-color-background-tertiary-semi-transparent-selected: var(--pindark-bg) !important;
+  --comp-button-color-background-tertiary-semi-transparent-disabled: var(--pindark-text-dim) !important;
+  --comp-button-color-hover-background-tertiary-semi-transparent-default:  var(--pindark-bg-hover) !important;
+  --comp-button-color-hover-background-tertiary-semi-transparent-selected: var(--pindark-bg-hover) !important;
+  --comp-button-color-pressed-background-tertiary-semi-transparent-default: var(--pindark-bg) !important;
+  --comp-button-color-pressed-background-tertiary-semi-transparent-selected: var(--pindark-bg) !important;
+  --comp-button-color-text-tertiary-semi-transparent-default:  var(--pindark-text) !important;
+  --comp-button-color-text-tertiary-semi-transparent-selected: var(--pindark-text) !important;
+  --comp-button-color-text-tertiary-semi-transparent-disabled: var(--pindark-text-dim) !important;
+  --comp-button-color-icon-tertiary-semi-transparent-default:  var(--pindark-text) !important;
+  --comp-button-color-icon-tertiary-semi-transparent-selected: var(--pindark-text) !important;
+  --comp-button-color-icon-tertiary-semi-transparent-disabled: var(--pindark-text-dim) !important;
+
+  --comp-button-color-background-transparent-default:        transparent !important;
+  --comp-button-color-background-transparent-selected:       var(--pindark-bg) !important;
+  --comp-button-color-background-transparent-disabled:       transparent !important;
+  --comp-button-color-hover-background-transparent-default:  var(--pindark-bg-hover) !important;
+  --comp-button-color-hover-background-transparent-selected: var(--pindark-bg-hover) !important;
+  --comp-button-color-pressed-background-transparent-default: var(--pindark-bg) !important;
+  --comp-button-color-pressed-background-transparent-selected: var(--pindark-bg) !important;
+  --comp-button-color-text-transparent-default:              var(--pindark-text) !important;
+  --comp-button-color-text-transparent-selected:             var(--pindark-text) !important;
+  --comp-button-color-text-transparent-disabled:             var(--pindark-text-dim) !important;
+  --comp-button-color-icon-transparent-default:              var(--pindark-text) !important;
+  --comp-button-color-icon-transparent-selected:             var(--pindark-text) !important;
+  --comp-button-color-icon-transparent-disabled:             var(--pindark-text-dim) !important;
+
+  --comp-button-color-background-transparent-inverse-default:        var(--pindark-text) !important;
+  --comp-button-color-background-transparent-inverse-selected:       var(--pindark-text) !important;
+  --comp-button-color-background-transparent-inverse-disabled:       var(--pindark-text-dim) !important;
+  --comp-button-color-hover-background-transparent-inverse-default:  var(--pindark-text-muted) !important;
+  --comp-button-color-hover-background-transparent-inverse-selected: var(--pindark-text-muted) !important;
+  --comp-button-color-pressed-background-transparent-inverse-default: var(--pindark-text) !important;
+  --comp-button-color-pressed-background-transparent-inverse-selected: var(--pindark-text) !important;
+  --comp-button-color-text-transparent-inverse-default:              var(--pindark-bg) !important;
+  --comp-button-color-text-transparent-inverse-selected:             var(--pindark-bg) !important;
+  --comp-button-color-text-transparent-inverse-disabled:             var(--pindark-bg-elevated) !important;
+  --comp-button-color-icon-transparent-inverse-default:              var(--pindark-bg) !important;
+  --comp-button-color-icon-transparent-inverse-selected:             var(--pindark-bg) !important;
+  --comp-button-color-icon-transparent-inverse-disabled:             var(--pindark-bg-elevated) !important;
+
+  /* dark variant: in light mode, dark buttons have a black background
+   * with white text. In dark mode we flip to use the same dark surface
+   * as the rest of the page so the contrast is preserved. */
+  --comp-button-color-background-dark-default:         var(--pindark-bg) !important;
+  --comp-button-color-background-dark-selected:        var(--pindark-bg-elevated) !important;
+  --comp-button-color-background-dark-disabled:        var(--pindark-text-dim) !important;
+  --comp-button-color-hover-background-dark-default:   var(--pindark-bg-hover) !important;
+  --comp-button-color-hover-background-dark-selected:  var(--pindark-bg-hover) !important;
+  --comp-button-color-pressed-background-dark-default: var(--pindark-bg-elevated) !important;
+  --comp-button-color-pressed-background-dark-selected: var(--pindark-bg-elevated) !important;
+  --comp-button-color-text-dark-default:               var(--pindark-text) !important;
+  --comp-button-color-text-dark-selected:              var(--pindark-text) !important;
+  --comp-button-color-text-dark-disabled:              var(--pindark-text-dim) !important;
+  --comp-button-color-icon-dark-default:               var(--pindark-text) !important;
+  --comp-button-color-icon-dark-selected:              var(--pindark-text) !important;
+  --comp-button-color-icon-dark-disabled:              var(--pindark-text-dim) !important;
+
+  /* light variant: in light mode, light buttons have a white background
+   * with black text. In dark mode we flip — light variant becomes a
+   * light surface with dark text (for "secondary action on dark" UX). */
+  --comp-button-color-background-light-default:         var(--pindark-text) !important;
+  --comp-button-color-background-light-selected:        var(--pindark-text-muted) !important;
+  --comp-button-color-background-light-disabled:        var(--pindark-text-dim) !important;
+  --comp-button-color-hover-background-light-default:   var(--pindark-text-muted) !important;
+  --comp-button-color-hover-background-light-selected:  var(--pindark-text-muted) !important;
+  --comp-button-color-pressed-background-light-default: var(--pindark-text) !important;
+  --comp-button-color-pressed-background-light-selected: var(--pindark-text) !important;
+  --comp-button-color-text-light-default:               var(--pindark-bg) !important;
+  --comp-button-color-text-light-selected:              var(--pindark-bg) !important;
+  --comp-button-color-text-light-disabled:              var(--pindark-bg-elevated) !important;
+  --comp-button-color-icon-light-default:               var(--pindark-bg) !important;
+  --comp-button-color-icon-light-selected:              var(--pindark-bg) !important;
+  --comp-button-color-icon-light-disabled:              var(--pindark-bg-elevated) !important;
+
+  /* Button toggle (Save/Follow) — non-red states only. Save-enabled-
+   * deselected is the only red one and we leave it alone. */
+  --comp-buttontoggle-color-background-default-disabled-strong: var(--pindark-text-dim) !important;
+  --comp-buttontoggle-color-background-default-disabled-subtle: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-background-default-enabled-deselected: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-background-default-enabled-strong: var(--pindark-bg) !important;
+  --comp-buttontoggle-color-background-default-enabled-subtle: var(--pindark-bg) !important;
+  --comp-buttontoggle-color-background-graphic-disabled-strong: var(--pindark-text-dim) !important;
+  --comp-buttontoggle-color-background-graphic-disabled-subtle: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-background-graphic-enabled-deselected: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-background-graphic-enabled-strong: var(--pindark-bg) !important;
+  --comp-buttontoggle-color-background-graphic-enabled-subtle: var(--pindark-bg) !important;
+  --comp-buttontoggle-color-border-default-enabled-subtle: var(--pindark-text-dim) !important;
+  --comp-buttontoggle-color-border-graphic-enabled-subtle: var(--pindark-text-dim) !important;
+  --comp-buttontoggle-color-hover-background-default-enabled-deselected: var(--pindark-bg-hover) !important;
+  --comp-buttontoggle-color-hover-background-default-enabled-strong: var(--pindark-bg-hover) !important;
+  --comp-buttontoggle-color-hover-background-default-enabled-subtle: var(--pindark-bg-hover) !important;
+  --comp-buttontoggle-color-hover-background-graphic-enabled-deselected: var(--pindark-bg-hover) !important;
+  --comp-buttontoggle-color-hover-background-graphic-enabled-strong: var(--pindark-bg-hover) !important;
+  --comp-buttontoggle-color-hover-background-graphic-enabled-subtle: var(--pindark-bg-hover) !important;
+  --comp-buttontoggle-color-hover-border-default-enabled-subtle: var(--pindark-text-muted) !important;
+  --comp-buttontoggle-color-hover-border-graphic-enabled-subtle: var(--pindark-text-muted) !important;
+  --comp-buttontoggle-color-pressed-background-default-enabled-deselected: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-pressed-background-default-enabled-strong: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-pressed-background-default-enabled-subtle: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-pressed-background-graphic-enabled-deselected: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-pressed-background-graphic-enabled-strong: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-pressed-background-graphic-enabled-subtle: var(--pindark-bg-elevated) !important;
+  --comp-buttontoggle-color-pressed-border-default-enabled-subtle: var(--pindark-text-muted) !important;
+  --comp-buttontoggle-color-pressed-border-graphic-enabled-subtle: var(--pindark-text-muted) !important;
+
+  /* Modal / Dialog / Overlay Elevation Tokens */
+  --color-background-elevation-modal:        var(--pindark-bg-elevated) !important;
+  --color-background-box-light:              var(--pindark-bg-elevated) !important;
+  --color-background-container:              var(--pindark-bg-elevated) !important;
+
+  /* Extras */
+  --comp-searchguide-color-text-default: var(--pindark-text) !important;
+}
+
+/*
+ * 3. Body / page chrome.
+ *
+ * We touch only the outer chrome (page background, scrollbars, links,
+ * native controls). We deliberately do NOT touch [data-test-id] or
+ * [role] generically — Pinterest's image wrappers and pin-card internals
+ * carry those attributes, and a broad rule there either paints over
+ * thumbnails or interferes with lazy-loading.
+*/
+html.pindark-on,
+html.pindark-on body {
+  background-color: var(--pindark-bg) !important;
+  color: var(--pindark-text) !important;
+}
+
+html.pindark-on a,
+html.pindark-on a:visited {
+  color: var(--pindark-link) !important;
+}
+
+/* Native form controls that Pinterest renders with raw HTML. */
+html.pindark-on input,
+html.pindark-on textarea,
+html.pindark-on select {
+  background-color: var(--pindark-bg) !important;
+  color: var(--pindark-text) !important;
+  border-color: var(--pindark-border) !important;
+}
+
+html.pindark-on input::placeholder,
+html.pindark-on textarea::placeholder {
+  color: var(--pindark-text-dim) !important;
+}
+
+/* Scrollbars (WebKit) */
+html.pindark-on ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+html.pindark-on ::-webkit-scrollbar-track {
+  background: var(--pindark-bg);
+}
+html.pindark-on ::-webkit-scrollbar-thumb {
+  background: var(--pindark-border);
+  border-radius: 6px;
+}
+html.pindark-on ::-webkit-scrollbar-thumb:hover {
+  background: var(--pindark-text-dim);
+}
+
+/* Selection */
+html.pindark-on ::selection {
+  background-color: var(--pindark-accent);
+  color: #ffffff;
+}
+
+/*
+ * 5. Page-chrome leftovers.
+ *
+ * Most chrome elements (search bar, tabs, avatar, hover rings) flow
+ * through Pinterest's CSS tokens, which we already override in
+ * section 2 — including the dedicated --sema-color-hover-background-*
+ * tokens that drive the hover ring on icon buttons.
+ *
+ * This section handles only the few elements whose visible state
+ * needs a touch that tokens alone don't provide (caret color,
+ * transparent resting backgrounds, etc.).
+*/
+
+/* Search input caret (separate from background, which is token-driven). */
+html.pindark-on [data-test-id="search-box-input"] {
+  caret-color: var(--pindark-text) !important;
+}
+
+/* Search bar container — Pinterest renders the search bar as a rounded
+ * pill. The container itself and its direct children (the input wrapper
+ * div) can have white backgrounds that bleed through the rounded corners,
+ * creating visible white edges against the dark page. We force the
+ * background to transparent at rest so the dark page shows through. */
+html.pindark-on [data-test-id="search-box-container"] {
+  background-color: transparent !important;
+}
+html.pindark-on [data-test-id="search-box-container"] > * {
+  background-color: transparent !important;
+}
+
+/* Search bar focus ring — Pinterest sets an inline box-shadow
+ * (rgba(0, 132, 255, 0.5) 0 0 0 4px) via JS on the wrapper when the
+ * input is focused. The wrapper is a child of
+ * [data-test-id="search-box-container"], specifically the
+ * `.ADXRXN.gEQpi5.sSBu24.wl0pCr.zEVE_X` div. Since we can't rely on
+ * Pinterest's class hashes, we target the container's direct
+ * children and clear their box-shadow. We do NOT use a wildcard
+ * descendant selector here — that would risk clobbering image
+ * rendering on any future Pinterest child elements.
+ *
+ * The :focus-within selector on the container matches whenever the
+ * input is focused. */
+html.pindark-on [data-test-id="search-box-container"]:focus-within {
+  border-color: var(--pindark-border) !important;
+}
+html.pindark-on [data-test-id="search-box-container"]:focus-within > * {
+  box-shadow: none !important;
+}
+
+/* Search bar hover — Pinterest applies a white background on the
+ * container and its children on hover, which creates visible white
+ * rounded edges against the dark page. We force the background to
+ * transparent on hover so the search bar's own token-driven
+ * background (--sema-color-background-secondary → #262626) shows
+ * through uniformly across the entire pill, rounded corners included.
+ * No two-tone effect — the edges and the body are the same color. */
+html.pindark-on [data-test-id="search-box-container"]:hover {
+  border-color: var(--pindark-border) !important;
+  background-color: transparent !important;
+}
+html.pindark-on [data-test-id="search-box-container"]:hover > * {
+  background-color: transparent !important;
+}
+
+/* DraftJS Comment Editor Overrides */
+
+/* 1. Override Pinterest's hardcoded inline style="color: rgb(0, 0, 0)" */
+html.pindark-on [data-test-id="comment-editor-container"],
+html.pindark-on #dweb-comment-editor-container {
+  color: var(--pindark-text) !important;
+}
+
+/* 2. Force DraftJS text and typing cursor (caret) to stay light */
+html.pindark-on .DraftEditor-root,
+html.pindark-on .public-DraftEditor-content {
+  color: var(--pindark-text) !important;
+  caret-color: var(--pindark-text) !important;
+}
+
+/* 3. Style DraftJS placeholder text ("Add a comment...") */
+html.pindark-on .public-DraftEditorPlaceholder-root {
+  color: var(--pindark-text-dim) !important;
+}
+
+/*
+ * 6. Sidebar icon active/pressed state.
+ *
+ * Pinterest's left-rail navigation icons (logo, Home, Explore,
+ * Boards, Create) show a white background ring when the user clicks
+ * or holds the mouse button down. The active-state tokens
+ * (--sema-color-active-background-*) do NOT control this — Pinterest
+ * uses a different mechanism, likely a hardcoded color or a
+ * class-based rule on the :active pseudo-class.
+ *
+ * The icon container is always a 48×48 div with classes
+ * VHreRh + XjRT60, wrapped in an <a> or <button>. We target :active
+ * on the anchor/button and force the inner ring to use our dark
+ * hover color. 
+*/
+html.pindark-on [data-test-id="pinterest-logo-home-button"] a:active .VHreRh,
+html.pindark-on [data-test-id="vertical-nav-icon"] a:active .VHreRh,
+html.pindark-on [data-test-id="create-tab"]:active .VHreRh {
+  background-color: var(--pindark-bg-hover) !important;
+}
+
+/* Broader catch-all: any XjRT60 (the hover/active ring class) that
+ * is in an :active state — regardless of which token or hardcoded
+ * color Pinterest uses for the pressed ring. */
+html.pindark-on .XjRT60:active,
+html.pindark-on a:active .XjRT60,
+html.pindark-on button:active .XjRT60 {
+  background-color: var(--pindark-bg-hover) !important;
+}
+
+/* Target the "My saves" / Board Select dropdown button directly */
+[data-test-id="PinBetterSaveDropdown"] {
+  background-color: var(--pindark-bg) !important;
+  border: 1px solid var(--pindark-bg) !important;
+  color: #e9e9e9 !important;
+}
+
+/* Fix Hover State */
+[data-test-id="PinBetterSaveDropdown"]:hover {
+  background-color: #333333 !important;
+  border-color: #4a4a4a !important;
+}
+
+/* Fix Active / Pressed / Focus Ring State (removes the white outline) */
+[data-test-id="PinBetterSaveDropdown"]:focus,
+[data-test-id="PinBetterSaveDropdown"]:active,
+[data-test-id="PinBetterSaveDropdown"][aria-expanded="true"] {
+  background-color: var(--pindark-bg) !important;
+  box-shadow: 0 0 0 2px var(--pindark-bg) !important;
+  outline: none !important;
+}
+
+/* Force the text inside ("My saves") to stay light gray/white */
+[data-test-id="PinBetterSaveDropdown"] div {
+  color: #e9e9e9 !important;
+}
+
+/* Force the dropdown arrow SVG to turn light gray */
+[data-test-id="PinBetterSaveDropdown"] svg {
+  fill: #e9e9e9 !important;
+}
+
+/* 7. Modals, Sheets, and Dialogs. */
+
+/* 1. Header bar (title + close button row) — reused as footer bar too */
+html.pindark-on .ADXRXN.dDmW3o.gEQpi5,
+html.pindark-on .ADXRXN.CQ1_jt.b6DHg3 {
+  background-color: var(--pindark-bg) !important;
+  color: var(--pindark-text) !important;
+}
+
+/* 2. Textarea — unchanged, this part was already working */
+html.pindark-on #edit-bio-textarea {
+  background-color: var(--pindark-bg) !important;
+  color: var(--pindark-text) !important;
+}
+
+html.pindark-on #edit-bio-textarea::placeholder {
+  color: var(--pindark-text-dim) !important;
+}
+
+html.pindark-on label[for="edit-bio-textarea"] {
+  color: var(--pindark-text) !important;
+}
+
+html.pindark-on .ADXRXN.MJ_eMy.drGcEU.gEQpi5.gHrR3r.wl0pCr,
+html.pindark-on .ADXRXN.b6DHg3.i1hWBD {
+  background-color: var(--pindark-bg) !important;
+}
+
+/* 5. "About" header — reached structurally via its known sibling, no hash class needed */
+html.pindark-on h2:has(+ button[aria-label="Close"]) {
+  color: var(--pindark-text) !important;
+}
+
+html.pindark-on button[aria-label="Close"] {
+  background-color: transparent !important;
+}
+
+html.pindark-on button[aria-label="Close"] svg {
+  fill: var(--pindark-text) !important;
+}
+
+/* 6. Character counter */
+html.pindark-on #edit-bio-textarea-helperText,
+html.pindark-on #edit-bio-textarea-helperText * {
+  color: var(--pindark-text-muted) !important;
+}
+
+/* Emoji Picker (emoji-picker-react) Dark Tokens */
+html.pindark-on .EmojiPickerReact {
+  --epr-bg-color:                       var(--pindark-bg-elevated) !important;
+  --epr-category-label-bg-color:        var(--pindark-bg-elevated) !important;
+  --epr-picker-border-color:            var(--pindark-border)      !important;
+  --epr-text-color:                     var(--pindark-text)        !important;
+  --epr-hover-bg-color:                 var(--pindark-bg-hover)    !important;
+  --epr-search-input-bg-color:          var(--pindark-bg)          !important;
+  --epr-search-input-text-color:         var(--pindark-text)        !important;
+  --epr-search-input-placeholder-color:  var(--pindark-text-dim)    !important;
+  --epr-preview-border-color:           var(--pindark-border)      !important;
+  --epr-reactions-bg-color:             var(--pindark-bg-elevated) !important;
+  --epr-emoji-variation-picker-bg-color: var(--pindark-bg-elevated) !important;
+  
+  /* Force dark mode variables in case Pinterest's script requests the dark theme */
+  --epr-dark-bg-color:                       var(--pindark-bg-elevated) !important;
+  --epr-dark-category-label-bg-color:        var(--pindark-bg-elevated) !important;
+  --epr-dark-picker-border-color:            var(--pindark-border)      !important;
+  --epr-dark-text-color:                     var(--pindark-text)        !important;
+  --epr-dark-hover-bg-color:                 var(--pindark-bg-hover)    !important;
+  --epr-dark-search-input-bg-color:          var(--pindark-bg)          !important;
+}
